@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FEM Playground &amp; 2D Plane-Stress Q4 Studio</title>
+    <script type="module" crossorigin src="./assets/index-C1fJ8E5Z.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C_KXNk6m.css">
+  </head>
+  <body>
+    <div id="app-root">
+      <!-- Top Header Banner -->
+      <header class="top-header">
+        <div class="header-title">
+          FEM Playground &amp; 2D Plane-Stress Studio <span class="header-units">— SI Units (m, N, Pa)</span>
+        </div>
+        <div class="header-actions">
+          <button id="watch-intro-btn" class="btn btn-intro" title="Replay the short concept animation &amp; ambient music for this challenge">
+            &#9654; Watch intro
+          </button>
+          <button id="report-btn" class="btn btn-report" title="Open your 12-challenge campaign report, mastered takeaways &amp; concepts to revisit">
+            Learning Report
+          </button>
+          <button id="help-btn" class="btn btn-help" title="What the symbols, units and plot markers mean, plus tips for this challenge">
+            Help &amp; Symbols
+          </button>
+          <button id="handoff-sandbox-btn" class="btn btn-handoff" title="Transfer this challenge's geometry, material, mesh &amp; load into Engineering Sandbox">
+            Open in Sandbox
+          </button>
+          <button id="mode-switch-btn" class="btn btn-mode">Switch to Sandbox</button>
+          <div id="preset-wrap" class="preset-wrap hidden">
+            <label for="preset-select">Preset:</label>
+            <select id="preset-select">
+              <option value="milestone1">Verified Cantilever (40x4 Q4, Al 70 GPa)</option>
+              <option value="coarse_10x1">Coarse Shear-Locked Mesh (10x1 Q4)</option>
+              <option value="fine_80x8">Fine Converged Mesh (80x8 Q4)</option>
+              <option value="legacy_2018">Legacy 2018 Reference (5x1 m, 20x10)</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main 2-Column Workspace -->
+      <main class="workspace-grid">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+          <div class="sidebar-tabs" role="tablist">
+            <button id="tab-sandbox-btn" class="sidebar-tab" role="tab">Engineering Sandbox</button>
+            <button id="tab-challenges-btn" class="sidebar-tab active" role="tab">Learning Challenges</button>
+          </div>
+
+          <!-- SANDBOX TAB CONTENT -->
+          <div id="sandbox-pane" class="sidebar-pane hidden">
+            <section class="card">
+              <div class="card-title">Geometry &amp; Structured Q4 Mesh</div>
+              <div class="form-grid-2">
+                <label for="sb-length">Length L (m)</label>
+                <input id="sb-length" type="number" step="0.1" min="0.05" value="2.0" />
+                <label for="sb-height">Height H (m)</label>
+                <input id="sb-height" type="number" step="0.02" min="0.01" value="0.20" />
+                <label for="sb-thick">Thickness t (m)</label>
+                <input id="sb-thick" type="number" step="0.005" min="0.001" value="0.020" />
+                <label for="sb-nx">Elements along x (nx)</label>
+                <input id="sb-nx" type="number" step="1" min="1" max="240" value="40" />
+                <label for="sb-ny">Elements along y (ny)</label>
+                <input id="sb-ny" type="number" step="1" min="1" max="64" value="4" />
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Isotropic Linear-Elastic Material (Plane Stress)</div>
+              <div class="form-grid-2">
+                <label for="sb-youngs">Young's Modulus E (Pa)</label>
+                <div>
+                  <input id="sb-youngs" type="number" step="1000000000" min="1000" value="70000000000" />
+                  <div id="sb-youngs-gpa" class="field-hint">= 70 GPa</div>
+                </div>
+                <label for="sb-poisson">Poisson's Ratio &nu; (-)</label>
+                <input id="sb-poisson" type="number" step="0.01" min="-0.99" max="0.49" value="0.30" />
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Supports (x = 0) &amp; Right-Edge Load (x = L)</div>
+              <div class="form-grid-2">
+                <label for="sb-support">Left Support</label>
+                <select id="sb-support">
+                  <option value="fixed_left">Fixed wall (ux = uy = 0 on left edge)</option>
+                  <option value="roller_left_ux">Horizontal rollers only (ux = 0 — unstable!)</option>
+                  <option value="pin_bottom_left">Single pin at (0,0) (2 DOFs — mechanism!)</option>
+                </select>
+                <label for="sb-fx">Total Force Fx (N)</label>
+                <input id="sb-fx" type="number" step="100" value="0" />
+                <label for="sb-fy">Total Force Fy (N)</label>
+                <input id="sb-fy" type="number" step="100" value="-1000" />
+                <label for="sb-assembly">Load Assembly</label>
+                <select id="sb-assembly">
+                  <option value="consistent_edge_integration">Consistent 2-pt Gauss traction</option>
+                  <option value="equal_nodal_legacy">Equal nodal split (legacy)</option>
+                </select>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Simulation &amp; Export</div>
+              <div class="btn-stack">
+                <button id="sb-solve-btn" class="btn btn-primary">Solve Model</button>
+                <div class="btn-row-2">
+                  <button id="sb-conv-btn" class="btn btn-secondary">Run Convergence (10x1..160x16)</button>
+                  <button id="sb-export-btn" class="btn btn-secondary">Export CSV &amp; JSON</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- CHALLENGES TAB CONTENT -->
+          <div id="challenges-pane" class="sidebar-pane">
+            <section class="card">
+              <div class="card-title">Select Learning Challenge</div>
+              <select id="ch-selector" class="full-select"></select>
+              <div class="progress-row">
+                <span id="ch-progress-label" class="progress-stats">Stars: 0/36 &#9733; | Passed: 0/12 | Total: 0/1200 pts</span>
+                <button id="reset-save-btn" class="btn btn-small">Reset Save</button>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Challenge Goal</div>
+              <div id="ch-mission-brief" class="mission-brief"></div>
+              <details id="ch-idea-details" class="idea-box" open>
+                <summary>Key Concept &amp; Beginner Guide</summary>
+                <div id="ch-idea-text" class="idea-text"></div>
+                <div id="ch-assumptions-text" class="assumptions-text"></div>
+              </details>
+            </section>
+
+            <section class="card">
+              <div class="card-title">
+                Step 1 — Predict Before Solving
+                <span id="pred-lock-badge" class="lock-badge hidden">Locked until Submit</span>
+              </div>
+              <div class="field-stack">
+                <label id="pred1-label" for="pred1-select"></label>
+                <select id="pred1-select" class="full-select"></select>
+              </div>
+              <div id="pred2-wrap" class="field-stack hidden">
+                <label id="pred2-label" for="pred2-select"></label>
+                <select id="pred2-select" class="full-select"></select>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Step 2 — Configure Model / Measurements</div>
+              <div id="ch-step2-controls" class="step2-container"></div>
+              <div id="ch-budget-label" class="budget-readout"></div>
+            </section>
+
+            <section class="card">
+              <div class="card-title">Step 3 &amp; 4 — Solve, Inspect, Explain &amp; Score</div>
+              <button id="ch-inspect-btn" class="btn btn-primary full-width">1. Solve &amp; Inspect FEM Field</button>
+              <div class="field-stack" style="margin-top:8px">
+                <label id="explain-label" for="explain-select"></label>
+                <select id="explain-select" class="full-select"></select>
+              </div>
+              <div class="btn-row-2" style="margin-top:8px">
+                <button id="ch-submit-btn" class="btn btn-success">2. Submit &amp; Score</button>
+                <button id="ch-reset-btn" class="btn btn-secondary">Reset Level</button>
+              </div>
+            </section>
+          </div>
+        </aside>
+
+        <!-- Right Visualization & Readout Pane -->
+        <section class="viz-pane">
+          <!-- Display Toolbar -->
+          <div class="viz-toolbar card">
+            <div class="toolbar-group">
+              <label for="plot-field-select"><b>Plot Field:</b></label>
+              <select id="plot-field-select">
+                <option value="uy">Vertical Displacement uy (m)</option>
+                <option value="ux">Horizontal Displacement ux (m)</option>
+                <option value="umag">Displacement Magnitude |u| (m)</option>
+                <option value="sigma_xx">Bending Stress &sigma;xx (Pa, signed)</option>
+                <option value="sigma_yy">Transverse Stress &sigma;yy (Pa, signed)</option>
+                <option value="tau_xy">Shear Stress &tau;xy (Pa, signed)</option>
+                <option value="von_mises">Von Mises Stress &sigma;vM (Pa, &ge; 0)</option>
+                <option value="elem_von_mises">Element Centroid &sigma;vM (Pa)</option>
+                <option value="mesh_only">Mesh &amp; Boundary Conditions Only</option>
+              </select>
+            </div>
+            <div class="toolbar-group">
+              <label for="deform-scale-slider"><b>Deform Scale:</b></label>
+              <input id="deform-scale-slider" type="range" min="0" max="400" step="5" value="50" />
+              <input id="deform-scale-input" type="number" min="0" max="2000" step="5" value="50" class="scale-num" />
+              <span id="deform-scale-note" class="scale-note">50x (display only)</span>
+            </div>
+            <div class="toolbar-checks">
+              <label><input id="chk-undeformed" type="checkbox" checked /> Undeformed</label>
+              <label><input id="chk-edges" type="checkbox" checked /> Mesh Edges</label>
+              <label><input id="chk-bcs" type="checkbox" checked /> Supports &amp; Loads</label>
+            </div>
+          </div>
+
+          <!-- Plot Canvas Area -->
+          <div id="plots-split" class="plots-split">
+            <div class="plot-card card">
+              <div id="sandbox-plot-tabs" class="plot-subtabs hidden">
+                <button id="subtab-field-btn" class="subtab active">2D FEM Field &amp; Mesh</button>
+                <button id="subtab-conv-btn" class="subtab">Convergence Study (10x1..160x16)</button>
+              </div>
+              <div class="canvas-holder">
+                <canvas id="main-scene-canvas"></canvas>
+                <canvas id="sandbox-conv-canvas" class="hidden"></canvas>
+              </div>
+            </div>
+
+            <div id="aux-plot-card" class="plot-card card hidden">
+              <div class="canvas-holder">
+                <canvas id="aux-challenge-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Banner & Engineering Readout / Coaching Feedback -->
+          <div class="readout-card card">
+            <div id="status-banner" class="status-banner">Ready.</div>
+            <div id="sandbox-summary" class="sandbox-summary hidden">
+              <div id="sb-disp-line"></div>
+              <div id="sb-equil-line"></div>
+              <div id="sb-diag-line"></div>
+            </div>
+            <div id="challenge-feedback" class="challenge-feedback"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Intro Animation Player Modal -->
+    <div id="intro-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-window intro-modal">
+        <div class="modal-topbar">
+          <span id="intro-challenge-title" class="modal-title">Concept Intro</span>
+          <button id="intro-skip-btn" class="btn btn-small">Skip intro</button>
+        </div>
+        <div id="intro-step-header" class="intro-step-header"></div>
+        <div class="intro-canvas-wrap">
+          <canvas id="intro-canvas"></canvas>
+        </div>
+        <div id="intro-caption" class="intro-caption"></div>
+        <div class="intro-controls">
+          <button id="intro-back-btn" class="btn btn-secondary">&lt; Back</button>
+          <button id="intro-replay-btn" class="btn btn-secondary" title="Play this step again (R)">Replay</button>
+          <button id="intro-mute-btn" class="btn btn-secondary" title="Toggle calm background music (M)">&#128266; Sound: On</button>
+          <span class="intro-shortcuts">Space / Arrows to move &middot; R replay &middot; M mute &middot; Esc skip</span>
+          <button id="intro-next-btn" class="btn btn-primary">Next &gt;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Modal (Help & Symbols / Final Learning Report) -->
+    <div id="info-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-window info-modal">
+        <div class="modal-topbar">
+          <span id="info-modal-title" class="modal-title">Help &amp; Symbols</span>
+          <button id="info-modal-close" class="btn btn-small">Close</button>
+        </div>
+        <div id="info-modal-body" class="info-modal-body"></div>
+      </div>
+    </div>
+
+    <!-- Reset Progress Confirmation Modal -->
+    <div id="confirm-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+      <div class="modal-window confirm-modal">
+        <div class="modal-topbar">
+          <span class="modal-title">Reset Saved Progress</span>
+        </div>
+        <p style="margin:12px 0;font-size:13.5px;line-height:1.5">
+          Delete all saved stars, best scores, and attempt counts for every challenge in this browser?
+          <br /><b>This cannot be undone.</b>
+        </p>
+        <div class="btn-row-end">
+          <button id="confirm-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="confirm-reset-btn" class="btn btn-danger">Reset progress</button>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
